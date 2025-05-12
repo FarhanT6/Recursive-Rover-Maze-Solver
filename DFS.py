@@ -7,6 +7,7 @@ time.sleep(2)  # Wait for Arduino to reset
 
 # Constants
 WALL_THRESHOLD = 15  # Distance threshold to detect walls (in cm)
+GRID_SIZE = 3  # 3x3 grid
 
 # Movement Commands
 def move_forward():
@@ -38,65 +39,93 @@ def get_distance():
     except ValueError:
         return None
 
-def check_for_wall():
-    """Check if there is a wall in front of the robot"""
-    distance = get_distance()
-    return distance is not None and distance < WALL_THRESHOLD
+# Initialize maze state
+start = (0, 2)  # Starting position (x, y)
+end = (2, 0)    # Exit position (x, y)
+visited = [[False for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]  # Track visited cells
 
-def dfs(x, y, direction, visited):
+def solve_maze(x, y, direction):
     """
-    Recursive DFS with backtracking.
+    Recursive backtracking algorithm to solve the maze.
+    Requirements:
+    1. Attempts all valid moves from current cell
+    2. Detects and avoids walls/out-of-bounds
+    3. Marks visited paths to avoid revisiting
+    4. Backtracks when hitting dead end
+    5. Stops when exit is found
+    
     Parameters:
     - x, y: current position
     - direction: current facing direction (0=North, 1=East, 2=South, 3=West)
-    - visited: 2D array tracking visited cells
+    Returns:
+    - True if path to exit is found, False otherwise
     """
+    # Requirement 5: Stop when exit is found
     if (x, y) == end:
-        print(f"Reached goal at ({x}, {y})")
+        print(f"Found exit at ({x}, {y})!")
         return True
 
-    visited[y][x] = True  # mark current cell as visited
+    # Requirement 3: Mark visited paths
+    visited[y][x] = True
+    print(f"Visiting cell ({x}, {y})")
 
-    # Try all possible directions (forward, right, left)
+    # Requirement 1: Try all valid moves
     for _ in range(4):
-        # Check for wall before moving
-        if not check_for_wall():
-            # No wall detected, move forward
-            move_forward()
-            
+        # Requirement 2: Detect walls
+        distance = get_distance()
+        if distance is not None and distance >= WALL_THRESHOLD:
             # Calculate next position based on current direction
             if direction == 0:  # North
-                nx, ny = x, y-1
+                next_x, next_y = x, y-1
             elif direction == 1:  # East
-                nx, ny = x+1, y
+                next_x, next_y = x+1, y
             elif direction == 2:  # South
-                nx, ny = x, y+1
+                next_x, next_y = x, y+1
             else:  # West
-                nx, ny = x-1, y
-            
-            if 0 <= nx < 3 and 0 <= ny < 3 and not visited[ny][nx]:
-                if dfs(nx, ny, direction, visited):
-                    return True
-                
-                # Backtrack: turn around, move back, turn around again
-                turn_left()
-                turn_left()
+                next_x, next_y = x-1, y
+
+            # Requirement 2: Check for out-of-bounds and visited cells
+            if 0 <= next_x < GRID_SIZE and 0 <= next_y < GRID_SIZE and not visited[next_y][next_x]:
+                # Move forward to next cell
                 move_forward()
+                print(f"Moving to ({next_x}, {next_y})")
+
+                # Recursively try to solve from next position
+                if solve_maze(next_x, next_y, direction):
+                    return True
+
+                # Requirement 4: Backtrack when hitting dead end
+                print(f"Backtracking from ({next_x}, {next_y}) to ({x}, {y})")
+                # Turn around
                 turn_left()
                 turn_left()
-        
-        # Turn right to face the next direction
+                # Move back to previous cell
+                move_forward()
+                # Turn back to original direction
+                turn_left()
+                turn_left()
+
+        # Try next direction
         turn_right()
         direction = (direction + 1) % 4
 
+    # If we've tried all directions and none worked, return False
     return False
 
 def main():
-    print("Starting DFS navigation")
-    print(f"Starting at position {start} facing direction {start_direction}")
-    dfs(start[0], start[1], start_direction, visited)
+    """Main function to start the maze solving process"""
+    print("Starting maze solver")
+    print(f"Starting at position {start}")
+    print(f"Looking for exit at {end}")
+    
+    # Start facing North (direction 0)
+    if solve_maze(start[0], start[1], 0):
+        print("Successfully found path to exit!")
+    else:
+        print("No path to exit found!")
+    
     stop()
-    print("Navigation complete")
+    print("Maze solving complete")
 
 if __name__ == "__main__":
     main()
