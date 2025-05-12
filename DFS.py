@@ -39,11 +39,11 @@ def get_distance():
 # Maze Grid (0 = free, 1 = wall)
 grid = [
     [0, 1, 0],
-    [0, 0, 0],
-    [1, 1, 0]
+    [0, 1, 0],
+    [0, 1, 0]
 ]
-start = (0, 0)
-end = (2, 2)
+start = (0, 2)
+end = (2, 0)
 
 # Placeholder for visited state
 visited = [[False for _ in range(3)] for _ in range(3)]
@@ -62,6 +62,50 @@ def dfs(x, y, visited):
 
     TODO: Implement full DFS logic
     """
+
+    if (x, y) == end:
+        print(f"Reached goal at ({x}, {y})")
+        return True
+
+    visited[y][x] = True  # mark current cell as visited
+
+    for i in range(4):
+        # Estimate next cell based on current facing direction
+        if i == 0:  # forward
+            dx, dy = 0, 1
+        elif i == 1:  # right
+            dx, dy = 1, 0
+        elif i == 2:  # backward
+            dx, dy = 0, -1
+        else:  # left
+            dx, dy = -1, 0
+
+        nx, ny = x + dx, y + dy
+
+        # Check bounds and if not visited
+        if 0 <= nx < len(grid[0]) and 0 <= ny < len(grid) and not visited[ny][nx]:
+            distance = get_distance()
+
+            if distance is not None and distance >= 15:
+                move_forward()
+
+                if dfs(nx, ny, visited):
+                    return True
+
+                # Backtrack: turn around, move back, turn around again
+                turn_left()
+                turn_left()
+                move_forward()
+                turn_left()
+                turn_left()
+            else:
+                print(f"Wall detected or invalid at ({nx}, {ny})")
+
+        # Turn right to face the next direction
+        turn_right()
+
+    return False
+
     pass
 
 
