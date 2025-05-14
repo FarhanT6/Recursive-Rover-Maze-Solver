@@ -2,7 +2,7 @@ import serial
 import time
 
 # Establish serial connection to Arduino (adjust COM port as needed)
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+ser = serial.Serial('/dev/cu.usbmodem1101', 9600, timeout=1)
 time.sleep(2)  # Wait for Arduino to reset
 
 
@@ -67,7 +67,7 @@ def dfs(x, y, visited):
         print(f"Reached goal at ({x}, {y})")
         return True
 
-    visited[y][x] = True  # mark current cell as visited
+    visited[x][y] = True  # mark current cell as visited
 
     for i in range(4):
         # Estimate next cell based on current facing direction
@@ -93,17 +93,16 @@ def dfs(x, y, visited):
                     return True
 
                 # Backtrack: turn around, move back, turn around again
-                turn_left()
-                turn_left()
+                turn_right()
+                turn_right()
                 move_forward()
-                turn_left()
-                turn_left()
+                turn_right()
+
             else:
                 print(f"Wall detected or invalid at ({nx}, {ny})")
 
         # Turn right to face the next direction
-        turn_right()
-
+        turn_left()
     return False
 
     pass
